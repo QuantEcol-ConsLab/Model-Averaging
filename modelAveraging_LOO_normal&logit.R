@@ -120,7 +120,6 @@
        ylab = "Hand-made Artisanal predicitons", main = "Compare MuMIn and hand-predicted results")
   abline(0,1)
   
-  
   #  Plot to see how we did
   #  Compare MuMIn LOO-CV model-averaged predicted response against y
   plot(meanPredY.norm[[1]], dat.norm[,1], pch=16, xlab="LOO Predicted", ylab = "y")
@@ -273,4 +272,5 @@
   #  Add in MuMIn AIC model-averaged predictions
   points(meanPredY$fit, fm1.logit$fitted.values, col="red")
   
+  #  End
   
