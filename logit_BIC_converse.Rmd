@@ -1,0 +1,107 @@
+---
+title: "BIC Model Averaging"
+author: "Sarah Converse"
+date: "April 4, 2020"
+output: html_document
+---
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+require(plotrix)
+```
+We start by using dredge() to run all possible models given the 8 predictors: `r 2^8` models. We create a table with BIC values for all possible models. 
+```{r}
+data <- read.csv("logitSimulatedData1April2020.csv")
+data$X <- NULL
+
+M.global <- glm(y ~ ., family = binomial, data = data)
+
+library(MuMIn)
+options(na.action = "na.fail")
+BIC.table <- dredge(M.global, beta = "none", rank = 'BIC')
+```
+We can look at the first 4 models (they are listed by weight):  
+```{r, echo = FALSE}
+print(BIC.table[1:4,])
+```
+Next, we can extract weights for each of the set of models. We can also use the syntax 'BIC.table$weight' but this will give us the weights in descending order, whereas we are going to need them in the order the models were run.   
+```{r}
+models <- get.models(BIC.table, subset = TRUE)
+bic <- rep(NA,dim(BIC.table)[1])
+for(i in 1:length(bic)){
+  model <- eval(parse(text = paste("models$`",i,"`",sep = "")))
+  bic[i] <- BIC(model)
+  exp.delta <- exp(-0.5*(bic - min(bic)))
+  weights <- exp.delta/sum(exp.delta)
+}
+```
+We print the first four weights and see that these are not in descending order as they are in the table. 
+```{r, echo = FALSE}
+print(weights[1:4])
+```
+Now we extract fitted values (predictions) from each model and calculate model-averaged predictions. 
+```{r}
+fitted.avg <- rep(0,length(models$`1`$fitted.values))
+preds <- matrix(NA,nrow=length(bic),ncol=length(fitted.avg))
+for(i in 1:length(bic)){
+  model <- eval(parse(text = paste("models$`",i,"`",sep = "")))
+  preds[i,] <- model$fitted.values
+  fitted.avg <- fitted.avg + preds[i,]*weights[i]
+}
+```
+We can print the first 10 of 100.  
+```{r, echo = FALSE}
+print(fitted.avg[1:10])
+```
+We can plot the first 10 model-averaged predictions for inspection. We have the model-averaged predictions in <span style="color: red;">red</span>, the global model predictions in <span style="color: black;">black</span>, and the null model predictions in <span style="color: green;">green</span>.
+```{r, echo = FALSE}
+plot(x = c(1:10),y = fitted.avg[1:10], col = "red", ylab = "prediction", xlab = "data point", ylim = c(0,1))
+points(x = c(1:10), y = fitted(M.global)[1:10], col = "black")
+points(x = c(1:10), y = fitted(null <- glm(y ~ 1, family = binomial, data = data))[1:10], col = "green")
+```
+
+Now we need to calculate the variances for the predictions. The variances need to include both the uncertainty conditional on each model *and* the model selection uncertainty. We can use bootstrapping to get the variances on the predictions for each model, but its slow. 
+```{r}
+sims <- 100
+vars <- matrix(NA,nrow = dim(BIC.table)[1],ncol = 100)
+vars.avg <- rep(0,100)
+for(i in 1:nrow(vars)){
+  model <- eval(parse(text = paste("models$`",i,"`",sep = "")))
+  fitted <- matrix(NA,nrow = sims,ncol = 100)
+  for(j in 1:sims){
+    y.new <- unlist(simulate(model))
+    bmod <- update(model,y.new ~ .)
+    fitted[j,] <- fitted(bmod)
+  }
+  vars[i,] <- apply(fitted,2,var)
+  vars.avg <- vars.avg + weights[i]*(vars[i,] + (preds[i,] - fitted.avg)^2)
+}  
+```
+We can look at the first 10 of these variances.
+```{r}
+print(vars.avg[1:10])
+```
+Now we can calculate confidence intervals. 
+```{r}
+upper <- fitted.avg + 1.96*sqrt(vars.avg)
+lower <- fitted.avg - 1.96*sqrt(vars.avg)
+```
+Let's also get confidence intervals on the global model.
+```{r}
+fitted.global <- fitted(M.global)
+fits.global <- matrix(NA,nrow=sims,ncol=100)
+for(j in 1:sims){
+  y.new <- unlist(simulate(M.global))
+  bmod <- update(model,y.new ~ .)
+  fits.global[j,] <- fitted(bmod)
+}
+vars.global <- apply(fits.global,2,var)
+upper.global <- fitted.global + 1.96*sqrt(vars.global)
+lower.global <- fitted.global - 1.96*sqrt(vars.global)
+```  
+And we can plot the model-averaged estimates and confidence intervals alongside the estimates from the global model and confidence intervals.
+```{r, echo = FALSE}
+plotCI(x=c(1:10), fitted.avg[1:10], ui=upper[1:10], li=lower[1:10],xlab = "data point", ylab = "prediction",xlim = c(1,11))
+par(new=TRUE)
+plotCI(x=c(1:10), fitted.global[1:10], ui=upper.global[1:10], li=lower.global[1:10],xlab = "",ylab = "",col="red",xlim = c(1,11))
+```
