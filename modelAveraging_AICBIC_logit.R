@@ -6,7 +6,6 @@
 ##
 ##
 
-
 #rm(list=ls())
 set.seed(2020)
 
