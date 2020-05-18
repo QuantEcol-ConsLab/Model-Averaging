@@ -12,13 +12,13 @@ library(here)
 jackknife_MA_func<-function(data,fam){
 ## Normal data ##
 # Fit the global model
-fm1.norm <- glm(y~., data = data, na.action = "na.fail", family = fam)
+fm1 <- glm(y~., data = data, na.action = "na.fail", family = fam)
 
 # Use dredge to fit all possible models
-dfm1.norm.jack <- dredge(fm1.norm, rank="AIC") # do these need to be ranked?
+dfm1.jack <- dredge(fm1, rank="AIC") # do these need to be ranked?
 
 # Get all of the model fit results
-fm1mods.norm <- get.models(dfm1.norm.jack, subset = TRUE)
+fm1mods <- get.models(dfm1.jack, subset = TRUE)
 
 # Jackknife 
 # The jackknife model averaging optimises the fit of the prediction onto an omitted data point. 
@@ -27,14 +27,14 @@ fm1mods.norm <- get.models(dfm1.norm.jack, subset = TRUE)
 
 # Fit the candidate models, omitting one data point at a time.
 N <- nrow(data)
-M <- length(fm1mods.norm)
+M <- length(fm1mods)
 train <- data # we will use the entire dataset here, rather than a subset
 J <- matrix(NA, N, M) # matrix with jackknifed predictions
 for (i in 1:N){
   # re-fit models on train with one less data point:
-  jfits <- lapply(fm1mods.norm, update, .~. , data=train[-i,],family=fam) 
+  jfits <- lapply(fm1mods, update, .~. , data=train[-i,],family=fam) 
   # predict them to omitted data point:
-  J[i,] <- sapply(jfits, predict, newdata=train[i, , drop=F],family=fam) 
+  J[i,] <- sapply(jfits, predict, newdata=train[i, , drop=F],family=fam, type = "response") 
   rm(jfits)
 }
 
