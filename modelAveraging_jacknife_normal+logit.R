@@ -13,7 +13,7 @@ jackknife_MA_func<-function(data){
 
 ## Normal data ##
 # Fit the global model
-fm1.norm <- glm(y~., data = normdat, na.action = "na.fail", family = "gaussian")
+fm1.norm <- glm(y~., data = data, na.action = "na.fail", family = "gaussian")
 
 # Use dredge to fit all possible models
 dfm1.norm.jack <- dredge(fm1.norm, rank="AIC") # do these need to be ranked?
@@ -27,9 +27,9 @@ fm1mods.norm <- get.models(dfm1.norm.jack, subset = TRUE)
 # Code adapted from Dormann et al. 2018
 
 # Fit the candidate models, omitting one data point at a time.
-N <- nrow(normdat)
+N <- nrow(data)
 M <- length(fm1mods.norm)
-train <- normdat # we will use the entire dataset here, rather than a subset
+train <- data # we will use the entire dataset here, rather than a subset
 J <- matrix(NA, N, M) # matrix with jackknifed predictions
 for (i in 1:N){
   # re-fit models on train with one less data point:
@@ -58,7 +58,8 @@ print(RMSEjma)
 
 return(list(RMSEjma=RMSEjma,
             weightedPredsJMA=weightedPredsJMA,
-            weightsJMA=weightsJMA))
+            weightsJMA=weightsJMA,
+            LOO_preds=J))
 }
 
 #function to plot jackknife predictions vs truth
@@ -77,6 +78,8 @@ logitdat<-read.csv(here("logitSimulatedData1April2020.csv"))[,2:10]
 norm_jma<-jackknife_MA_func(normdat)
 plot_jackknifeM(truth=normdat$y,preds=norm_jma$weightedPredsJMA)#plot fits 
 hist(norm_jma$weightsJMA) #plot weights
+cor_preds<-cov((norm_jma$LOO_preds)) # is this how we 
+hist(cor_preds[upper.tri(cor_preds)]) #covariance between leave one out predictions
 
 #fit logit
 logit_jma<-jackknife_MA_func(logitdat)
