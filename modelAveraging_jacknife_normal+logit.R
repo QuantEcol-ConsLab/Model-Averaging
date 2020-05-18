@@ -39,21 +39,21 @@ for (i in 1:N){
 }
 
 # Compute RMSE for a value of w, given J.
-weightsopt <- function(ww, J){ 
+weightsopt <- function(ww, J){ # ww is a vector of model weights on transformed scale, J is our matrix of predicted points
   # function to compute RMSE on test data
   # at some point to also use likelihood instead of RMSE, but primarily for 0/1 data
-  w <- c(1, exp(ww)); w <- w/sum(w) 
-  Jpred <- J %*% w
-  return(sqrt(mean((Jpred - train$y)^2)))
+  w <- c(1, exp(ww)); w <- w/sum(w) # sums to weight
+  Jpred <- J %*% w # weighting predictions from all 256 models so we get 1 prediction for each point (100)
+  return(sqrt(mean((Jpred - train$y)^2))) # RMSE calculation
 }
-ops <- optim(par=runif(NCOL(J)-1), weightsopt, method="BFGS", control=list(maxit=5000), J=J)
-if (ops$convergence != 0) stop("Not converged!")
-round(weightsJMA <- c(1, exp(ops$par))/sum(c(1, exp(ops$par))),3)
+ops <- optim(par=runif(NCOL(J)-1), weightsopt, method="BFGS", control=list(maxit=5000), J=J) # finds vector of weights which makes best prediction, closet to actual data
+if (ops$convergence != 0) stop("Not converged!") 
+round(weightsJMA <- c(1, exp(ops$par))/sum(c(1, exp(ops$par))),3) # using "par" from ops, optimizing vector of weights (transformed)
 sum(weightsJMA) # check to see if sums to 1
-weightedPredsJMA <- J %*% weightsJMA
-(RMSEjma <- sqrt(mean((weightedPredsJMA - train$y)^2)))
-names(RMSEjma)<-"RMSE_jma"
-print(RMSEjma)
+weightedPredsJMA <- J %*% weightsJMA # optimized predictions (same as line 46 in function)
+(RMSEjma <- sqrt(mean((weightedPredsJMA - train$y)^2))) # RMSE with best vector weights
+names(RMSEjma)<-"RMSE_jma" # naming object
+print(RMSEjma) # root mean square error, measuring how close predictions to the actual data
 
 return(list(RMSEjma=RMSEjma,
             weightedPredsJMA=weightedPredsJMA,
