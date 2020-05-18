@@ -9,11 +9,10 @@ library(here)
 
 
 #function to conduct jackknife model averaging. Return RMSE, predictions, and weights
-jackknife_MA_func<-function(data){
-
+jackknife_MA_func<-function(data,fam){
 ## Normal data ##
 # Fit the global model
-fm1.norm <- glm(y~., data = data, na.action = "na.fail", family = "gaussian")
+fm1.norm <- glm(y~., data = data, na.action = "na.fail", family = fam)
 
 # Use dredge to fit all possible models
 dfm1.norm.jack <- dredge(fm1.norm, rank="AIC") # do these need to be ranked?
@@ -33,9 +32,9 @@ train <- data # we will use the entire dataset here, rather than a subset
 J <- matrix(NA, N, M) # matrix with jackknifed predictions
 for (i in 1:N){
   # re-fit models on train with one less data point:
-  jfits <- lapply(fm1mods.norm, update, .~. , data=train[-i,]) 
+  jfits <- lapply(fm1mods.norm, update, .~. , data=train[-i,],family=fam) 
   # predict them to omitted data point:
-  J[i,] <- sapply(jfits, predict, newdata=train[i, , drop=F]) 
+  J[i,] <- sapply(jfits, predict, newdata=train[i, , drop=F],family=fam) 
   rm(jfits)
 }
 
@@ -75,12 +74,12 @@ normdat<-read.csv(here("normalSimulatedData1April2020.csv"))[,2:10]
 logitdat<-read.csv(here("logitSimulatedData1April2020.csv"))[,2:10]
 
 #fit normal
-norm_jma<-jackknife_MA_func(normdat)
+norm_jma<-jackknife_MA_func(data=normdat,fam="gaussian")
 plot_jackknifeM(truth=normdat$y,preds=norm_jma$weightedPredsJMA)#plot fits 
 hist(norm_jma$weightsJMA) #plot weights
 cor_preds<-cov((norm_jma$LOO_preds)) # is this how we 
 hist(cor_preds[upper.tri(cor_preds)]) #covariance between leave one out predictions
 
 #fit logit
-logit_jma<-jackknife_MA_func(logitdat)
+logit_jma<-jackknife_MA_func(data=logitdat,fam="binomial")
 hist(logit_jma$weightsJMA) #plot weights
