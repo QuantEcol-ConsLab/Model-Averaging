@@ -8,14 +8,13 @@ library(MuMIn)
 library(here)
 
 
-#function to conduct jackknife model averaging. Return RMSE, predictions, and weights
+# Function to conduct jackknife model averaging. Return RMSE, predictions, and weights
 jackknife_MA_func<-function(data,fam){
-## Normal data ##
 # Fit the global model
 fm1 <- glm(y~., data = data, na.action = "na.fail", family = fam)
 
 # Use dredge to fit all possible models
-dfm1.jack <- dredge(fm1, rank="AIC") # do these need to be ranked?
+dfm1.jack <- dredge(fm1, rank="AIC") 
 
 # Get all of the model fit results
 fm1mods <- get.models(dfm1.jack, subset = TRUE)
@@ -55,7 +54,7 @@ weightedPredsJMA <- J %*% weightsJMA # optimized predictions (same as line 46 in
 names(RMSEjma)<-"RMSE_jma" # naming object
 print(RMSEjma) # root mean square error, measuring how close predictions to the actual data
 
-return(list(RMSEjma=RMSEjma,
+return(list(RMSEjma=RMSEjma, 
             weightedPredsJMA=weightedPredsJMA,
             weightsJMA=weightsJMA,
             LOO_preds=J))
