@@ -105,7 +105,7 @@ model_average_function<-function(
   
   
 #predict for all models
-preds_all_mods <-sapply(fm1.mods.all, predict, newdata = test_covs)
+preds_all_mods <-sapply(fm1.mods.all, predict, newdata = test_covs,family=data_type, type = "response")
 #weigh the models by the BG/MV weights
 wtpreds<-preds_all_mods%*%weights
 #RMSE 
