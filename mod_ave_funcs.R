@@ -70,17 +70,16 @@ model_average_function<-function(
 #calculate weights  
 
   #information criterion
-  if(method%in%c("AIC","BIC","Cp")){
+  if(method%in%c("AIC","BIC","Cp","loo")){
     #Get the information criterion value
+    if(method=="loo"){
+    mod_criterion_value<-sapply(fm1.mods.all, method,type="rmse")      
+    }else{
     mod_criterion_value<-sapply(fm1.mods.all, method)
+    }
     # Calculate the weights for each model based on Cp
     weights<-exp(-0.5*(mod_criterion_value-min(mod_criterion_value)))/sum(exp(-0.5*(mod_criterion_value-min(mod_criterion_value))))
   }else
-    #leave-one-out CV (is this an information criterion?)
-    if(method=="loo"){
-      dd_loo <- dredge(fm1, rank = "loo",type="rmse")
-      weights<-exp(-0.5*(dd_loo$loo-min(dd_loo$loo)))/sum(exp(-0.5*(dd_loo$loo-min(dd_loo$loo))))
-    }else
       #Bates-granger/minimal variance weights
       if(method=="minimum_variance"){
         weights<-(BGWeights(fm1.mods.all, data=train))#some are negative
