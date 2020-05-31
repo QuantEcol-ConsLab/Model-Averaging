@@ -10,8 +10,11 @@ library(here)
 
 # Function to conduct jackknife model averaging. Return RMSE, predictions, and weights
 jackknife_MA_func<-function(data,fam){
+  train <- data[1:50,]# we will use the entire dataset here, rather than a subset
+  test<-data[51:100,]
+  
 # Fit the global model
-fm1 <- glm(y~., data = data, na.action = "na.fail", family = fam)
+fm1 <- glm(y~., data = train, na.action = "na.fail", family = fam)
 
 # Use dredge to fit all possible models
 dfm1.jack <- dredge(fm1, rank="AIC") 
@@ -25,9 +28,8 @@ fm1mods <- get.models(dfm1.jack, subset = TRUE)
 # Code adapted from Dormann et al. 2018
 
 # Fit the candidate models, omitting one data point at a time.
-N <- nrow(data)
+N <- nrow(train)
 M <- length(fm1mods)
-train <- data # we will use the entire dataset here, rather than a subset
 J <- matrix(NA, N, M) # matrix with jackknifed predictions
 for (i in 1:N){
   # re-fit models on train with one less data point:
@@ -49,8 +51,13 @@ ops <- optim(par=runif(NCOL(J)-1), weightsopt, method="BFGS", control=list(maxit
 if (ops$convergence != 0) stop("Not converged!") 
 round(weightsJMA <- c(1, exp(ops$par))/sum(c(1, exp(ops$par))),3) # using "par" from ops, optimizing vector of weights (transformed)
 sum(weightsJMA) # check to see if sums to 1
-weightedPredsJMA <- J %*% weightsJMA # optimized predictions (same as line 46 in function)
-(RMSEjma <- sqrt(mean((weightedPredsJMA - train$y)^2))) # RMSE with best vector weights
+
+  
+#predict for all models
+  preds_all_mods <-sapply(fm1mods, predict, newdata = test[,-1],family=fam, type = "response")
+
+weightedPredsJMA <- preds_all_mods %*% weightsJMA # optimized predictions (same as line 46 in function)
+(RMSEjma <- sqrt(mean((weightedPredsJMA - test$y)^2))) # RMSE with best vector weights
 names(RMSEjma)<-"RMSE_jma" # naming object
 print(RMSEjma) # root mean square error, measuring how close predictions to the actual data
 
@@ -69,7 +76,7 @@ plot_jackknifeM<-function(truth,preds){
 
 
 # Read-in data
-normdat<-read.csv(here("normalSimulatedData1April2020.csv"))[,2:10]
+normdat<-read.csv(here("normalSimulatedData1April2020.csv"))[,2:6]
 logitdat<-read.csv(here("logitSimulatedData1April2020.csv"))[,2:10]
 
 #fit normal
