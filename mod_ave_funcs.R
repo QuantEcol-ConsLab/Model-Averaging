@@ -48,13 +48,13 @@ model_average_function<-function(
 ){
 
  #training data
-  train<-data_in[((nrow(data_in)/2)+1):(nrow(data_in)),c(1,covs)]
+  train<-data_in[1:(nrow(data_in)/2),c(1,covs)]
  
   #testing response
-  test_y<-data_in[1:(nrow(data_in)/2),1]
+  test_y<-data_in[((nrow(data_in)/2)+1):(nrow(data_in)),1]
   
   #testing covariate values
-  test_covs<-data_in[1:(nrow(data_in)/2),covs]
+  test_covs<-data_in[((nrow(data_in)/2)+1):(nrow(data_in)),covs]
   
   start_time<-Sys.time()
   
