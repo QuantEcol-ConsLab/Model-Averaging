@@ -27,11 +27,14 @@ dfm1.norm <- dredge(fm1.norm, rank="AIC")
 model.list <- get.models(dfm1.norm, subset = TRUE) ## do all of these models have an intercept?
 
 # Use BayesVarSel package to get Bayes Factors
-## Bvs() looks at model probabilities and variable inclusion
+
+## Manual method for fewer variables: 
+# Bvs() looks at model probabilities and variable inclusion
 mod.norm <- Bvs(y ~ V1 + V2 + V3 + V4, data = normdat)
 summary(mod.norm)
-# plot(mod.norm, option = 'conditional') ## this didn't work?
+plot(mod.norm, option = 'conditional') 
 
+# automatic testing of all possible models
 # Create grid of all model combinations
 predictors <- c("V1", "V2", "V3", "V4")
 regMat <- expand.grid(c(TRUE,FALSE), c(TRUE,FALSE),
@@ -41,7 +44,7 @@ allModelsList <- apply(regMat, 1, function(x) as.formula(
   paste(c("y ~ 1", predictors[x]),
         collapse=" + ")) )
 
-# Use Btest() computes Bayes Factors
+# Use Btest() to compute Bayes Factors
 weights <- Btest(
   models = allModelsList,
   data = normdat,
@@ -87,7 +90,7 @@ model.list <- get.models(dfm1.logit, subset = TRUE) ## do all of these models ha
 ## Bvs() looks at model probabilities and variable inclusion
 mod.logit <- Bvs(y ~ V1 + V2 + V3 + V4, data = logitdat)
 summary(mod.logit)
-# plot(mod.logit, option = 'conditional') ## this did not work!
+plot(mod.logit)
 
 # Create grid of all model combinations
 predictors <- c("V1", "V2", "V3", "V4")
@@ -98,7 +101,7 @@ allModelsList <- apply(regMat, 1, function(x) as.formula(
   paste(c("y ~ 1", predictors[x]),
         collapse=" + ")) )
 
-# Use Btest() computes Bayes Factors
+# Use Btest() to compute Bayes Factors
 weights <- Btest(
   models = allModelsList,
   data = logitdat,
@@ -123,7 +126,7 @@ weightedPredsBF.logit <- preds %*% BFweights.logit
 #### END Logit Data ####
 
 #### Dormann et al. code ####
-## Did not fully execute
+## Did not fully execute -- couldn't get the code to work.
 
 # Bayes Factor-based weights
 # first set up an indicator matrix for all models:
