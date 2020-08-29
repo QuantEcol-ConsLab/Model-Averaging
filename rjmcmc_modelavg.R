@@ -217,5 +217,5 @@ preds <- sapply(model.list, predict, newdata=testdat)
 
 (weightsrjMCMC <- weightsrjMCMC[rightSequence])
 
-weightedPredsrjMCMC <- preds %*% weightsrjMCMC
+weightedPredsrjMCMC <- plogis(preds %*% weightsrjMCMC)
 (RMSErjMCMC <- sqrt(mean((weightedPredsrjMCMC - truth)^2)))
