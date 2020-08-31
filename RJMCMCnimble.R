@@ -105,6 +105,8 @@ plot(as.mcmc(sampleslogit))
 ##### MODEL SELECTION WITH INDICATOR VARIABLES IN NIMBLE #####
 
 # NORMAL MODEL
+# TODO
+# why not psi ~ dbern(0.5), or unique psi for each variable
 normalindicator <- nimbleCode({
   sigma ~ dunif(0, 20)  ## uniform prior per Gelman (2006)
   psi ~ dunif(0,1)    ## prior on inclusion probability
@@ -292,4 +294,7 @@ summary(sampleslogitindicator)
 colSums(sampleslogitindicator)/dim(sampleslogitindicator)[1]
 # These don't look so good...any ideas?
 plot(as.mcmc(sampleslogitindicator))
+
+# TODO
+# how to compute model weights from this
 
